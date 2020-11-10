@@ -19,13 +19,14 @@
             Username = username;
         }
 
-        public void SetData(string id, string displayName, bool isSub)
+        public void SetData(string id, string displayName, bool isSub, string color = "#FFFFFF")
         {
             this.displayName = displayName;
             IsSub = isSub;
             Id = id;
+            Color = color;
         }
         
-        
+        public string Color { get; private set; }
     }
 }

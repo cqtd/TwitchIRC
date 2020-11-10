@@ -32,6 +32,9 @@ namespace TwitchChatConnect.Client
 
         private Regex messageRegexp =
             new Regex(@"display\-name=(.+);emotes.*subscriber=(.+);tmi.*user\-id=(.+);.*:(.*)!.*PRIVMSG.+:(.*)");
+        
+        private Regex messageRegexp2 =
+            new Regex(@"color=(.+);display");
 
         private Regex rewardRegexp =
             new Regex(
@@ -125,6 +128,8 @@ namespace TwitchChatConnect.Client
         {
             if (twitchClient.Available <= 0) return;
             string message = reader.ReadLine();
+            
+            Debug.Log(message);
 
             if (message == null) return;
             if (message.Length == 0) return;
@@ -166,9 +171,16 @@ namespace TwitchChatConnect.Client
             string idUser = messageRegexp.Match(message).Groups[3].Value;
             string username = messageRegexp.Match(message).Groups[4].Value;
             string messageSent = messageRegexp.Match(message).Groups[5].Value;
+            
+            var result = messageRegexp2.Match(message).Groups[0].Value;
+            string color = result.Replace("color=","").Replace(";display","");
+            if (string.IsNullOrEmpty(color))
+            {
+                color = "#FFFFFF";
+            }
 
             TwitchUser twitchUser = TwitchUserManager.AddUser(username);
-            twitchUser.SetData(idUser, displayName, isSub);
+            twitchUser.SetData(idUser, displayName, isSub, color);
 
             if (messageSent.Length == 0) return;
 
@@ -193,8 +205,15 @@ namespace TwitchChatConnect.Client
             string username = rewardRegexp.Match(message).Groups[5].Value;
             string messageSent = rewardRegexp.Match(message).Groups[6].Value;
             
+            var result = messageRegexp2.Match(message).Groups[0].Value;
+            string color = result.Replace("color=","").Replace(";display","");
+            if (string.IsNullOrEmpty(color))
+            {
+                color = "#FFFFFF";
+            }
+            
             TwitchUser twitchUser = TwitchUserManager.AddUser(username);
-            twitchUser.SetData(idUser, displayName, isSub);
+            twitchUser.SetData(idUser, displayName, isSub, color);
             
             TwitchChatReward chatReward = new TwitchChatReward(twitchUser, messageSent, customRewardId);
             onChatRewardReceived?.Invoke(chatReward);
@@ -202,15 +221,15 @@ namespace TwitchChatConnect.Client
 
         public bool SendChatMessage(string message)
         {
-            if (!IsConnected()) return false;
-            SendTwitchMessage(message);
+            // if (!IsConnected()) return false;
+            // SendTwitchMessage(message);
             return true;
         }
 
         public bool SendChatMessage(string message, float seconds)
         {
-            if (!IsConnected()) return false;
-            StartCoroutine(SendTwitchChatMessageWithDelay(message, seconds));
+            // if (!IsConnected()) return false;
+            // StartCoroutine(SendTwitchChatMessageWithDelay(message, seconds));
             return true;
         }
 
@@ -222,13 +241,18 @@ namespace TwitchChatConnect.Client
 
         private void SendTwitchMessage(string message)
         {
-            writer.WriteLine($"PRIVMSG #{twitchConnectData.ChannelName} :/me {message}");
+            // writer.WriteLine($"PRIVMSG #{twitchConnectData.ChannelName} :/me {message}");
             writer.Flush();
         }
 
         private bool IsConnected()
         {
             return twitchClient != null && twitchClient.Connected;
+        }
+
+        void OnDestroy()
+        {
+            twitchClient.Dispose();
         }
     }
 }

@@ -30,9 +30,9 @@ public class Example : MonoBehaviour
         string message =
             $"Command: '{chatCommand.Command}' - Username: {chatCommand.User.DisplayName} - Sub: {chatCommand.User.IsSub} - Parameters: {parameters}";
 
-        TwitchChatClient.instance.SendChatMessage($"Hello {chatCommand.User.DisplayName}! I received your message.");
-        TwitchChatClient.instance.SendChatMessage(
-            $"Hello {chatCommand.User.DisplayName}! This message will be sent in 5 seconds.", 5);
+        // TwitchChatClient.instance.SendChatMessage($"Hello {chatCommand.User.DisplayName}! I received your message.");
+        // TwitchChatClient.instance.SendChatMessage(
+        //     $"Hello {chatCommand.User.DisplayName}! This message will be sent in 5 seconds.", 5);
 
         AddText(message);
     }
