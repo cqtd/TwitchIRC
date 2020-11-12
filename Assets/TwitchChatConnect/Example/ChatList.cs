@@ -4,17 +4,24 @@ using TMPro;
 using TwitchChatConnect.Client;
 using TwitchChatConnect.Data;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class ChatList : MonoBehaviour
 {
-	[SerializeField] private Transform panel;
-	[SerializeField] private TextMeshProUGUI textPrefab;
-
 	[SerializeField] TextMeshProUGUI[] texts;
-
 	[SerializeField] string[] ignoreUsers;
 
+	public string msg;
+
+	[ContextMenu("Send")]
+	void SendMessage()
+	{
+		if (!string.IsNullOrEmpty(msg))
+		{
+			TwitchChatClient.instance.SendChatMessage(msg);
+			msg = string.Empty;
+		}
+	}
+	
 	void Start()
 	{
 		messages = new Queue<string>();
@@ -27,11 +34,7 @@ public class ChatList : MonoBehaviour
 				TwitchChatClient.instance.onChatRewardReceived += ShowReward;
                 
 			},
-			message =>
-			{
-				// Error when initializing.
-				Debug.LogError(message);
-			});
+			Debug.LogError);
 	}
 
 	void ShowCommand(TwitchChatCommand chatCommand)
@@ -45,9 +48,6 @@ public class ChatList : MonoBehaviour
 		string parameters = string.Join(" - ", chatCommand.Parameters);
 		string message =
 			$"Command: '{chatCommand.Command}' - Username: {chatCommand.User.DisplayName} - Sub: {chatCommand.User.IsSub} - Parameters: {parameters}";
-
-		// TwitchChatClient.instance.SendChatMessage($"Hello {chatCommand.User.DisplayName}! I received your message.");
-		// TwitchChatClient.instance.SendChatMessage($"Hello {chatCommand.User.DisplayName}! This message will be sent in 5 seconds.", 5);
 
 		AddText(message);
 	}
@@ -72,15 +72,13 @@ public class ChatList : MonoBehaviour
 			return;
 		}
 		
-		string message = $"Message by {chatMessage.User.DisplayName} - Message: {chatMessage.Message}";
-		// AddText(message);
 		AddText($"<color={chatMessage.User.Color}>{chatMessage.User.DisplayName}({chatMessage.User.Id})</color>: {chatMessage.Message}");
 	}
 
 	Queue<string> messages;
 	int capacity;
 
-	private void AddText(string message)
+	void AddText(string message)
 	{
 		if (messages.Count >= capacity)
 		{
@@ -99,12 +97,6 @@ public class ChatList : MonoBehaviour
 			{
 				texts[i].SetText(messages.ElementAt(i));
 			}
-			
-			// texts[i].SetText(messages.ElementAt(i));
-
 		}
-		
-		// TextMeshProUGUI newText = Instantiate(textPrefab, panel);
-		// newText.SetText(message);
 	}
 }

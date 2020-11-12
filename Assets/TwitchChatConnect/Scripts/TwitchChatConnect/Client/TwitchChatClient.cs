@@ -12,42 +12,39 @@ namespace TwitchChatConnect.Client
     public class TwitchChatClient : MonoBehaviour
     {
         [Header("config.json file with 'username', 'userToken' and 'channelName'")] 
-        [SerializeField] private string configurationPath = "";
+        [SerializeField]
+        string configurationPath = "";
 
         [Header("Command prefix, by default is '!' (only 1 character)")] 
-        [SerializeField] private string commandPrefix = "!";
+        [SerializeField]
+        string commandPrefix = "!";
 
-        private TcpClient twitchClient;
-        private StreamReader reader;
-        private StreamWriter writer;
-        private TwitchConnectData twitchConnectData;
+        TcpClient twitchClient;
+        StreamReader reader;
+        StreamWriter writer;
+        TwitchConnectData twitchConnectData;
 
-        private static string COMMAND_JOIN = "JOIN";
-        private static string COMMAND_PART = "PART";
-        private static string COMMAND_MESSAGE = "PRIVMSG";
-        private static string CUSTOM_REWARD_TEXT = "custom-reward-id";
+        static string COMMAND_JOIN = "JOIN";
+        static string COMMAND_PART = "PART";
+        static string COMMAND_MESSAGE = "PRIVMSG";
+        static string CUSTOM_REWARD_TEXT = "custom-reward-id";
 
-        private Regex joinRegexp = new Regex(@":(.+)!.*JOIN"); // :<user>!<user>@<user>.tmi.twitch.tv JOIN #<channel>
-        private Regex partRegexp = new Regex(@":(.+)!.*PART"); // :<user>!<user>@<user>.tmi.twitch.tv PART #<channel>
+        Regex joinRegexp = new Regex(@":(.+)!.*JOIN"); // :<user>!<user>@<user>.tmi.twitch.tv JOIN #<channel>
+        Regex partRegexp = new Regex(@":(.+)!.*PART"); // :<user>!<user>@<user>.tmi.twitch.tv PART #<channel>
 
-        private Regex messageRegexp =
+        Regex messageRegexp =
             new Regex(@"display\-name=(.+);emotes.*subscriber=(.+);tmi.*user\-id=(.+);.*:(.*)!.*PRIVMSG.+:(.*)");
-        
-        private Regex messageRegexp2 =
+
+        Regex messageRegexp2 =
             new Regex(@"color=(.+);display");
 
-        private Regex rewardRegexp =
+        Regex rewardRegexp =
             new Regex(
                 @"custom\-reward\-id=(.+);display\-name=(.+);emotes.*subscriber=(.+);tmi.*user\-id=(.+);.*:(.*)!.*PRIVMSG.+:(.*)");
 
-        public delegate void OnChatMessageReceived(TwitchChatMessage chatMessage);
-        public OnChatMessageReceived onChatMessageReceived;
-        
-        public delegate void OnChatCommandReceived(TwitchChatCommand chatCommand);
-        public OnChatCommandReceived onChatCommandReceived;
-        
-        public delegate void OnChatRewardReceived(TwitchChatReward chatReward);
-        public OnChatRewardReceived onChatRewardReceived;
+        public Action<TwitchChatMessage> onChatMessageReceived;
+        public Action<TwitchChatCommand> onChatCommandReceived;
+        public Action<TwitchChatReward> onChatRewardReceived;
 
         public delegate void OnError(string errorMessage);
 
@@ -106,7 +103,7 @@ namespace TwitchChatConnect.Client
             }, message => onError(message));
         }
 
-        private void Login()
+        void Login()
         {
             twitchClient = new TcpClient("irc.chat.twitch.tv", 6667);
             reader = new StreamReader(twitchClient.GetStream());
@@ -124,7 +121,7 @@ namespace TwitchChatConnect.Client
             writer.Flush();
         }
 
-        private void ReadChatLine()
+        void ReadChatLine()
         {
             if (twitchClient.Available <= 0) return;
             string message = reader.ReadLine();
@@ -164,7 +161,7 @@ namespace TwitchChatConnect.Client
             }
         }
 
-        private void ReadChatMessage(string message)
+        void ReadChatMessage(string message)
         {
             string displayName = messageRegexp.Match(message).Groups[1].Value;
             bool isSub = messageRegexp.Match(message).Groups[2].Value == "1";
@@ -196,7 +193,7 @@ namespace TwitchChatConnect.Client
             }
         }
 
-        private void ReadChatReward(string message)
+        void ReadChatReward(string message)
         {
             string customRewardId = rewardRegexp.Match(message).Groups[1].Value;
             string displayName = rewardRegexp.Match(message).Groups[2].Value;
@@ -221,31 +218,31 @@ namespace TwitchChatConnect.Client
 
         public bool SendChatMessage(string message)
         {
-            // if (!IsConnected()) return false;
-            // SendTwitchMessage(message);
+            if (!IsConnected()) return false;
+            SendTwitchMessage(message);
             return true;
         }
 
         public bool SendChatMessage(string message, float seconds)
         {
-            // if (!IsConnected()) return false;
-            // StartCoroutine(SendTwitchChatMessageWithDelay(message, seconds));
+            if (!IsConnected()) return false;
+            StartCoroutine(SendTwitchChatMessageWithDelay(message, seconds));
             return true;
         }
 
-        private IEnumerator SendTwitchChatMessageWithDelay(string message, float seconds)
+        IEnumerator SendTwitchChatMessageWithDelay(string message, float seconds)
         {
             yield return new WaitForSeconds(seconds);
             SendTwitchMessage(message);
         }
 
-        private void SendTwitchMessage(string message)
+        void SendTwitchMessage(string message)
         {
-            // writer.WriteLine($"PRIVMSG #{twitchConnectData.ChannelName} :/me {message}");
+            writer.WriteLine($"PRIVMSG #{twitchConnectData.ChannelName} :/me {message}");
             writer.Flush();
         }
 
-        private bool IsConnected()
+        bool IsConnected()
         {
             return twitchClient != null && twitchClient.Connected;
         }
